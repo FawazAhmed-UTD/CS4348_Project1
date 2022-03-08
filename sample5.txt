@@ -1,0 +1,61 @@
+1    // Load 0
+0
+14   // CopyToX
+4    // LoadIdxX 32 (load from A-Z table)
+32
+21   // JumpIfEqual 12
+12
+9    // Put 2 (output as char)
+2
+25   // IncX
+20   // Jump 3
+3
+1    // Load 0
+0
+16   // CopyToY
+5    // LoadIdxY 59 (load from 1-10 table)
+59
+21   // JumpIfEqual 27
+27
+9    // Put 1 (output as int)
+1
+1    // Load 1  (because no IncY instruction)
+1
+11   // AddY
+16   // CopyToY
+20   // Jump 15
+15
+1    // Print newline
+10
+9
+2
+50  // End
+72  //H
+101 //e
+108 //l
+108 //l
+111 //o
+44  //,
+32  //(space)
+119 //w
+111 //o
+114 //r
+108 //l
+100 //d
+33  //!
+32  //(space)
+79
+119
+79
+32  //(space)
+62
+61
+60
+32  //(space)
+111
+119
+111
+32  //(space)
+
+.1000
+30
