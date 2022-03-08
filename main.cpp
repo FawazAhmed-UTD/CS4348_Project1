@@ -38,13 +38,13 @@ int main(int argc, char** argv) {
 
         case 0:
         {
-            CPU cpu(atoi(argv[2]));
-            cpu.startCPU();
+            Memory memory(fileName);
+            memory.runMemory();
 
         }
         default:
-            Memory memory(fileName);
-            memory.runMemory();
+            CPU cpu(atoi(argv[2]));
+            cpu.startCPU();
     }
     return 0;
 }

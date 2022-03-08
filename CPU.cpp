@@ -5,26 +5,28 @@
 #include "CPU.h"
 
 
-int CPU::startCPU(){
+int CPU::startCPU(){    //runs for CPU
     int userPrograms = 999;
     int systemCode = 1999;
-    int cpuCounter = 0;
-    int waitingCount = 0;
+    int instuctionCount = 0;
+    int interrupt = 0;
     bool userMode = true;
     PC = 0;
     SP = userPrograms;
 
     while (true) {
-        char instruction[5] = {'\0', '\0', '\0', '\0', '\0'};
+        char instruction[5] = {'\0', '\0', '\0', '\0', '\0'};   //instruction buffer
         char* buffer;
         bool jump = false;
-        if (userMode && cpuCounter > 0 && (cpuCounter % timer) == 0){
-            waitingCount++;
-        }
 
-        if ((userMode && cpuCounter > 0 && (cpuCounter % timer) == 0) || (userMode && waitingCount)) {
+        //checks if there is another interrupt going on
+        if (!userMode && instuctionCount > 0 && (instuctionCount % timer) == 0){
+            interrupt++;
+        }
+        //For kernal mode
+        if ((userMode && instuctionCount > 0 && (instuctionCount % timer) == 0) || (userMode && interrupt)) {
             userMode = false;
-            waitingCount--;
+            interrupt--;
             int userSp = SP;
             int userPc = PC;
             SP = systemCode;
@@ -52,24 +54,24 @@ int CPU::startCPU(){
         write(pIn[1], &(*buffer), 5);
         read(pOut[0], &instruction, 4);
 
-        cpuCounter++;
+        instuctionCount++;
 
         if (instruction[0] == '\0') {
             continue;
         }
 
-        IR = char2Int(instruction);
+        IR = char2Int(instruction); //get instuction
         char read_mem[5];
 
-        switch(IR) {
-            case 1:
+        switch(IR) {    //executions
+            case 1://    1 = Load value
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
                 read(pOut[0], &read_mem, 4);
                 AC = char2Int(read_mem);
                 break;
-            case 2:
+            case 2://    2 = Load addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -84,7 +86,7 @@ int CPU::startCPU(){
                     AC = char2Int(read_mem);
                 }
                 break;
-            case 3:
+            case 3://    3 = LoadInd addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -106,7 +108,7 @@ int CPU::startCPU(){
                         AC = char2Int(read_mem);
                     }
                 }
-            case 4:
+            case 4://    4 = LoadIdxX addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -121,7 +123,7 @@ int CPU::startCPU(){
                     AC = char2Int(read_mem);
                 }
                 break;
-            case 5:
+            case 5://    5 = LoadIdxY addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -136,8 +138,8 @@ int CPU::startCPU(){
                     AC = char2Int(read_mem);
                 }
                 break;
-            case 6:
-                if (X + SP > 999 && !userMode)
+            case 6://    6 = LoadSpX
+                if (X + SP > 999 && userMode)
                     cout << "Can't access memory in user mode" << endl;
                 else {
                     buffer = generateInstruction('r', SP + 1 + X);
@@ -146,7 +148,7 @@ int CPU::startCPU(){
                     AC = char2Int(read_mem);
                 }
                 break;
-            case 7:
+            case 7://    7 = Store addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -157,10 +159,10 @@ int CPU::startCPU(){
                 buffer = generateInstruction('\0', AC);
                 write(pIn[1], &(*buffer), 4);
                 break;
-            case 8:
+            case 8://    8 = Get
                 AC = rand() % 100 + 1;
                 break;
-            case 9:
+            case 9://    9 = Put port
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -174,37 +176,37 @@ int CPU::startCPU(){
                 }
 
                 break;
-            case 10:
+            case 10://AddX
                 AC += X;
                 break;
-            case 11:
+            case 11://addy
                 AC += Y;
                 break;
-            case 12:
+            case 12://subx
                 AC -= X;
                 break;
-            case 13:
+            case 13://suby
                 AC -= Y;
                 break;
-            case 14:
+            case 14://   14 = CopyToX
                 X = AC;
                 break;
-            case 15:
+            case 15://   15 = CopyFromX
                 AC = X;
                 break;
-            case 16:
+            case 16://   16 = CopyToY
                 Y = AC;
                 break;
-            case 17:
+            case 17://   17 = CopyFromY
                 AC = Y;
                 break;
-            case 18:
+            case 18://   18 = CopyToSp
                 SP = AC;
                 break;
-            case 19:
+            case 19://   19 = CopyFromSp
                 AC = SP;
                 break;
-            case 20:
+            case 20://   20 = Jump addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -213,7 +215,7 @@ int CPU::startCPU(){
                 PC = char2Int(read_mem);
                 jump = true;
                 break;
-            case 21:
+            case 21://   21 = JumpIfEqual addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -224,7 +226,7 @@ int CPU::startCPU(){
                     jump = true;
                 }
                 break;
-            case 22:
+            case 22://   22 = JumpIfNotEqual addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -235,7 +237,7 @@ int CPU::startCPU(){
                     jump = true;
                 }
                 break;
-            case 23:
+            case 23://   23 = Call addr
                 PC++;
                 buffer = generateInstruction('r', PC);
                 write(pIn[1], &(*buffer), 5);
@@ -250,7 +252,7 @@ int CPU::startCPU(){
                 PC = char2Int(read_mem);
                 jump = true;
                 break;
-            case 24:
+            case 24://   24 = Ret
                 SP++;
                 buffer = generateInstruction('r', SP);
                 write(pIn[1], &(*buffer), 5);
@@ -259,13 +261,13 @@ int CPU::startCPU(){
                 PC = char2Int(read_mem);
                 jump = true;
                 break;
-            case 25:
+            case 25://   25 = IncX
                 X++;
                 break;
-            case 26:
+            case 26://   26 = DecX
                 X--;
                 break;
-            case 27:
+            case 27://   27 = Push
                 buffer = generateInstruction('w', SP);
                 write(pIn[1], &(*buffer), 5);
                 buffer = generateInstruction('\0', AC);
@@ -273,7 +275,7 @@ int CPU::startCPU(){
 
                 SP--;
                 break;
-            case 28:
+            case 28://   28 = Pop
                 SP++;
                 buffer = generateInstruction('r', SP);
                 write(pIn[1], &(*buffer), 5);
@@ -281,31 +283,31 @@ int CPU::startCPU(){
 
                 AC = char2Int(read_mem);
                 break;
-            case 29:
-            {
-                userMode = false;
-                int usrSP = SP;
-                int usrPC = PC + 1;
-                SP = systemCode;
-                PC = 1500;
-                jump = true;
+            case 29://   29 = Int
+                if(userMode){
+                    userMode = false;
+                    int usrSP = SP;
+                    int usrPC = PC + 1;
+                    SP = systemCode;
+                    PC = 1500;
+                    jump = true;
 
-                buffer = generateInstruction('w', SP);
-                write(pIn[1], &(*buffer), 5);
-                buffer = generateInstruction('\0', usrSP);
-                write(pIn[1], &(*buffer), 4);
+                    buffer = generateInstruction('w', SP);
+                    write(pIn[1], &(*buffer), 5);
+                    buffer = generateInstruction('\0', usrSP);
+                    write(pIn[1], &(*buffer), 4);
 
-                SP--;
+                    SP--;
 
-                buffer = generateInstruction('w', SP);
-                write(pIn[1], &(*buffer), 5);
-                buffer = generateInstruction('\0', usrPC);
-                write(pIn[1], &buffer, 4);
+                    buffer = generateInstruction('w', SP);
+                    write(pIn[1], &(*buffer), 5);
+                    buffer = generateInstruction('\0', usrPC);
+                    write(pIn[1], &buffer, 4);
 
-                SP--;
+                    SP--;
+                }
                 break;
-            }
-            case 30:
+            case 30://   30 = IRet
                 userMode = true;
                 SP++;
 
@@ -324,7 +326,7 @@ int CPU::startCPU(){
 
                 SP = char2Int(read_mem);
                 break;
-            case 50:
+            case 50: //   50 = End
                 close(pOut[0]);
                 close(pOut[1]);
                 write(pIn[1], "e", 5);
@@ -338,17 +340,17 @@ int CPU::startCPU(){
     }
 }
 
-int CPU::char2Int(char *input) {
+int CPU::char2Int(char *input) {//array of char to int
     try{
         return boost::lexical_cast<int>(input);
     }
     catch(const std::exception& e){
-        cerr << "Can't access memory in user mode" << endl;
+        cerr << " Can't access memory in user mode" << endl;//error stuff for sample4.txt which I couldnt get ot work
         exit(0);
     }
 }
 
-char* CPU::generateInstruction(char command, int address) {
+char* CPU::generateInstruction(char command, int address) {//helper method
     char* buffer = new char[10];
     string addressStr = to_string(address);
     if(command == '\0'){
