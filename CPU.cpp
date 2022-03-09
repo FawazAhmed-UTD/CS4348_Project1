@@ -7,7 +7,7 @@
 
 int CPU::startCPU(){    //runs for CPU
     int userPrograms = 999;
-    int systemCode = 1999;
+    int systemStack = 1999;
     int instuctionCount = 0;
     int interrupt = 0;
     bool userMode = true;
@@ -23,16 +23,18 @@ int CPU::startCPU(){    //runs for CPU
         if (!userMode && instuctionCount > 0 && (instuctionCount % timer) == 0){
             interrupt++;
         }
-        //For kernal mode
+        //to check for timer interrupts.
         if ((userMode && instuctionCount > 0 && (instuctionCount % timer) == 0) || (userMode && interrupt)) {
             userMode = false;
-            interrupt--;
             int userSp = SP;
             int userPc = PC;
-            SP = systemCode;
+            SP = systemStack;
             PC = 1000;
             jump = true;
 
+            interrupt--;
+
+            //it puts the user sp and pc into memory
             buffer = generateInstruction('w', SP);
             write(pIn[1], &(*buffer), 5);
             buffer = generateInstruction('\0', userSp);
@@ -50,6 +52,7 @@ int CPU::startCPU(){    //runs for CPU
             continue;
         }
 
+        //get next instruction
         buffer = generateInstruction('r', PC);
         write(pIn[1], &(*buffer), 5);
         read(pOut[0], &instruction, 4);
@@ -60,7 +63,7 @@ int CPU::startCPU(){    //runs for CPU
             continue;
         }
 
-        IR = char2Int(instruction); //get instuction
+        IR = char2Int(instruction); //load instruction
         char read_mem[5];
 
         switch(IR) {    //executions
@@ -93,14 +96,14 @@ int CPU::startCPU(){    //runs for CPU
                 read(pOut[0], &read_mem, 4);
 
                 if (char2Int(read_mem) > 999 && userMode)
-                    cout << "Can't access memory in user mode" << endl;
+                    cout << "Can't access memory in user mode: " << char2Int(read_mem) << endl;
                 else {
                     buffer = generateInstruction('r', char2Int(read_mem));
                     write(pIn[1], &(*buffer), 5);
                     read(pOut[0], &read_mem, 4);
                     AC = char2Int(read_mem);
                     if (char2Int(read_mem) > 999 && userMode)
-                        cout << "Can't access memory in user mode" << endl;
+                        cout << "Can't access memory in user mode: " << char2Int(read_mem) << endl;
                     else {
                         buffer = generateInstruction('r', AC);
                         write(pIn[1], &(*buffer), 5);
@@ -115,7 +118,7 @@ int CPU::startCPU(){    //runs for CPU
                 read(pOut[0], &read_mem, 4);
 
                 if (X + char2Int(read_mem) > 999 && userMode)
-                    cout << "Can't access memory in user mode" << endl;
+                    cout << "Can't access memory in user mode: " << char2Int(read_mem) << endl;
                 else {
                     buffer = generateInstruction('r', X + char2Int(read_mem));
                     write(pIn[1], &(*buffer), 5);
@@ -130,7 +133,7 @@ int CPU::startCPU(){    //runs for CPU
                 read(pOut[0], &read_mem, 4);
 
                 if (Y + char2Int(read_mem) > 999 && userMode)
-                    cout << "Can't access memory in user mode" << endl;
+                    cout << "Can't access memory in user mode: " << char2Int(read_mem) << endl;
                 else {
                     buffer = generateInstruction('r', Y + char2Int(read_mem));
                     write(pIn[1], &(*buffer), 5);
@@ -140,7 +143,7 @@ int CPU::startCPU(){    //runs for CPU
                 break;
             case 6://    6 = LoadSpX
                 if (X + SP > 999 && userMode)
-                    cout << "Can't access memory in user mode" << endl;
+                    cout << "Can't access memory in user mode: " << char2Int(read_mem) << endl;
                 else {
                     buffer = generateInstruction('r', SP + 1 + X);
                     write(pIn[1], &(*buffer), 5);
@@ -286,23 +289,22 @@ int CPU::startCPU(){    //runs for CPU
             case 29://   29 = Int
                 if(userMode){
                     userMode = false;
-                    int usrSP = SP;
-                    int usrPC = PC + 1;
-                    SP = systemCode;
+                    int userSP = SP;
+                    int userPC = PC + 1;
+                    SP = systemStack;
                     PC = 1500;
                     jump = true;
 
                     buffer = generateInstruction('w', SP);
                     write(pIn[1], &(*buffer), 5);
-                    buffer = generateInstruction('\0', usrSP);
+                    buffer = generateInstruction('\0', userSP);
                     write(pIn[1], &(*buffer), 4);
 
-                    SP--;
 
                     buffer = generateInstruction('w', SP);
                     write(pIn[1], &(*buffer), 5);
-                    buffer = generateInstruction('\0', usrPC);
-                    write(pIn[1], &buffer, 4);
+                    buffer = generateInstruction('\0', userPC);
+                    write(pIn[1], &(*buffer), 4);
 
                     SP--;
                 }
@@ -327,11 +329,12 @@ int CPU::startCPU(){    //runs for CPU
                 SP = char2Int(read_mem);
                 break;
             case 50: //   50 = End
-                close(pOut[0]);
-                close(pOut[1]);
                 write(pIn[1], "e", 5);
                 close(pIn[0]);
                 close(pIn[1]);
+                close(pOut[0]);
+                close(pOut[1]);
+
                 return 0;
         }
         if (!jump){
@@ -344,11 +347,11 @@ int CPU::char2Int(char *input) {//array of char to int
     try{
         return boost::lexical_cast<int>(input);
     }
-    catch(const std::exception& e){
-        cerr << " Can't access memory in user mode" << endl;//error stuff for sample4.txt which I couldnt get ot work
-        exit(0);
+    catch (const boost::bad_lexical_cast& e){
+        return atoi(input);
     }
 }
+
 
 char* CPU::generateInstruction(char command, int address) {//helper method
     char* buffer = new char[10];
@@ -366,3 +369,4 @@ char* CPU::generateInstruction(char command, int address) {//helper method
     }
     return buffer;
 }
+

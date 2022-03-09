@@ -19,8 +19,8 @@ public:
         this->timer = timer;
     }
     int startCPU();
-    int char2Int(char input[]);
-    char* generateInstruction(char command, int address);
+    static int char2Int(char input[]);
+    static char* generateInstruction(char command, int address);
 };
 
 

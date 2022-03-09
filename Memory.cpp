@@ -64,10 +64,9 @@ int Memory::runMemory() {
 
 int Memory::char2Int(char *input) { //change array of char to ints
     try{
-        return boost::lexical_cast<int>(input);
+        return boost::lexical_cast<int>(input); //somtimes this doesnt work
     }
-    catch(const std::exception& e){
-        cerr << "Cannot convert to integer error." << endl;
-        exit(0);
+    catch (const boost::bad_lexical_cast& e){
+        return atoi(input);
     }
 }
